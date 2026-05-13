@@ -34,8 +34,8 @@ function validateInput(inputElement) {
         value = parts[0] + '.' + parts.slice(1).join('');
     }
 
-    if (parts.length === 2 && parts[1].length > 6) {
-        value = parts[0] + '.' + parts[1].substring(0, 6);
+    if (parts.length === 2 && parts[1].length > 4) {
+        value = parts[0] + '.' + parts[1].substring(0, 4);
     }
 
     if (parseFloat(value) > 10000) {
@@ -46,7 +46,7 @@ function validateInput(inputElement) {
     return value;
 }
 
-// Используем .then как ты просила ранее
+
 function getRates() {
     if (fromCurrency === toCurrency) {
         rates = { [toCurrency]: 1 };
@@ -112,17 +112,17 @@ function calculate(direction) {
     updateBankInfo();
 }
 
-// ИСПРАВЛЕННАЯ ФУНКЦИЯ БАНКА
+
 function updateBankInfo() {
     const comm = banks[activeBank];
     
-    // Определяем, какую сумму брать за основу. 
-    // Если последний раз меняли правый инпут, считаем комиссии от него.
+
+    // Если последний раз меняли правый инпут, считаем вот это все от него.
     const amount = lastEdited === 'from' 
         ? (parseFloat(toInput.value) || 0) 
         : (parseFloat(fromInput.value) || 0);
 
-    // Логика: BUY (покупка банком) и SELL (продажа банком)
+    //  BUY  и SELL 
     const buy = amount * (1 - Math.abs(comm.buy)); 
     const sell = amount * (1 + Math.abs(comm.sell));
     
