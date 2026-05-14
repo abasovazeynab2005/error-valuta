@@ -12,7 +12,7 @@ let rates = {};
 let fromCurrency = "RUB";
 let toCurrency = "USD";
 let activeBank = "NEW";
-let lastEdited = 'from'; 
+let lastEdited = 'from';
 
 const fromInput = document.getElementById('from-input');
 const toInput = document.getElementById('to-input');
@@ -20,25 +20,35 @@ const fromRateInfo = document.getElementById('from-rate-info');
 const toRateInfo = document.getElementById('to-rate-info');
 const offlineNotice = document.getElementById('offline-notification');
 
-function toggleOfflineNotice(show) {
-    if (offlineNotice) offlineNotice.style.display = show ? 'block' : 'none';
+function offlineFunction(show) {
+    if (offlineNotice) {
+        if (show === true) {
+            offlineNotice.style.display = 'block';
+        }
+        else {
+            offlineNotice.style.display = 'none';
+
+        }
+    }
 }
+//   offlineNotice.style.display = show ? 'block' : 'none';
+
 
 function validateInput(inputElement) {
     let value = inputElement.value;
-    value = value.replace(',', '.'); 
-    value = value.replace(/[^0-9.]/g, ''); 
-    
-    const parts = value.split('.');
-    if (parts.length > 2) {
-        value = parts[0] + '.' + parts.slice(1).join('');
+    value = value.replace(',', '.');
+    value = value.replace(/[^0-9.]/g, '');
+
+     let num = value.split('.');
+    if (num.length > 2) {
+        value = num[0] + '.' + num.slice(1).join('');
     }
 
-    if (parts.length === 2 && parts[1].length > 4) {
-        value = parts[0] + '.' + parts[1].substring(0, 4);
+    if (num.length === 2 && num[1].length > 4) {
+        value = num[0] + '.' + num[1].slice(0, 4);
     }
 
-    if (parseFloat(value) > 10000) {
+    if (Number(value) > 10000) {
         value = "10000";
     }
 
@@ -48,27 +58,31 @@ function validateInput(inputElement) {
 
 
 function getRates() {
+    // Если выбрали одинаковые валюты, не нужно ничего запрашивать, просто ставим курс 1 и считаем.
     if (fromCurrency === toCurrency) {
         rates = { [toCurrency]: 1 };
         calculate(lastEdited);
         return;
-    }
+     }
 
     fetch(`${baseUrl}${fromCurrency}`)
-        .then(response => {
-            if (!response.ok) throw new Error();
-            return response.json();
-        })
+       .then(response => {
+    if (response.ok) {
+        return response.json();
+    } else {
+        throw new Error();
+    }
+})
         .then(data => {
             if (data.result === "success") {
                 rates = data.conversion_rates;
                 localStorage.setItem(`rates_${fromCurrency}`, JSON.stringify(rates));
-                toggleOfflineNotice(false); 
+                offlineFunction(false);
                 calculate(lastEdited);
             }
         })
         .catch(() => {
-            toggleOfflineNotice(true); 
+            offlineFunction(true);
             loadFromCache();
         });
 }
@@ -80,56 +94,65 @@ function loadFromCache() {
         calculate(lastEdited);
     }
 }
-
+//
 function calculate(direction) {
     lastEdited = direction;
-    const currentRate = rates[toCurrency];
+    let currentRate = rates[toCurrency];
     if (!currentRate) return;
 
-    const reverseRate = 1 / currentRate;
+    let reverseRate = 1 / currentRate;
 
     if (direction === 'from') {
-        const val = validateInput(fromInput);
-        if (val === "" || val === ".") { 
-            toInput.value = ""; 
-            updateBankInfo(); 
-            return; 
+        let val = validateInput(fromInput);
+        if (val === "" || val === ".") {
+            toInput.value = "";
+            updateBankInfo();
+            return;
         }
-        toInput.value = (parseFloat(val) * currentRate).toFixed(4);
+        toInput.value = (Number(val) * currentRate).toFixed(4);
     } else {
-        const val = validateInput(toInput);
-        if (val === "" || val === ".") { 
-            fromInput.value = ""; 
-            updateBankInfo(); 
-            return; 
+        let val = validateInput(toInput);
+        if (val === "" || val === ".") {
+            fromInput.value = "";
+            updateBankInfo();
+            return;
         }
-        fromInput.value = (parseFloat(val) * reverseRate).toFixed(4);
+        fromInput.value = (Number(val) * reverseRate).toFixed(4);
     }
+fromRateInfo.innerText =
+        "1 " + fromCurrency + " = " +
+        currentRate.toFixed(4) + " " +
+        toCurrency;
 
-    fromRateInfo.innerText = `1 ${fromCurrency} = ${currentRate.toFixed(4)} ${toCurrency}`;
-    toRateInfo.innerText = `1 ${toCurrency} = ${reverseRate.toFixed(4)} ${fromCurrency}`;
-    
+    toRateInfo.innerText =
+        "1 " + toCurrency + " = " +
+        reverseRate.toFixed(4) + " " +
+        fromCurrency;
+
     updateBankInfo();
 }
 
 
 function updateBankInfo() {
-    const comm = banks[activeBank];
-    
+    let comm = banks[activeBank];
+
 
     // Если последний раз меняли правый инпут, считаем вот это все от него.
-    const amount = lastEdited === 'from' 
-        ? (parseFloat(toInput.value) || 0) 
-        : (parseFloat(fromInput.value) || 0);
+    let amount;
+     if (lastEdited === 'from'){
+        amount = Number(toInput.value) || 0;}
+        else{
+         amount =Number(fromInput.value) || 0;
+        }
 
     //  BUY  и SELL 
-    const buy = amount * (1 - Math.abs(comm.buy)); 
-    const sell = amount * (1 + Math.abs(comm.sell));
-    
+    let buy = amount * (1 - Math.abs(comm.buy));
+    let sell = amount * (1 + Math.abs(comm.sell));
+
     // Если мы меняли ПРАВЫЙ инпут, то BUY/SELL показывают сколько это в ЛЕВОЙ валюте.
     // Если ЛЕВЫЙ — то в ПРАВОЙ. 
-    document.getElementById('buy-value').innerText = amount > 0 ? buy.toFixed(2) : "0.00";
-    document.getElementById('sell-value').innerText = amount > 0 ? sell.toFixed(2) : "0.00";
+    document.getElementById('buy-value').innerText = amount > 0 ? buy.toFixed(4) : "0.00";
+    document.getElementById('sell-value').innerText = amount > 0 ? sell.toFixed(4) : "0.00";
 }
 
 function setupButtons(containerId, type) {
@@ -145,7 +168,7 @@ function setupButtons(containerId, type) {
             if (type === 'to') toCurrency = btn.innerText;
             if (type === 'bank') activeBank = btn.innerText;
 
-            getRates(); 
+            getRates();
         };
     });
 }
@@ -157,10 +180,10 @@ fromInput.onfocus = () => { lastEdited = 'from'; };
 toInput.onfocus = () => { lastEdited = 'to'; };
 
 window.addEventListener('online', () => {
-    toggleOfflineNotice(false);
+    offlineFunction(false);
     getRates();
 });
-window.addEventListener('offline', () => toggleOfflineNotice(true));
+window.addEventListener('offline', () => offlineFunction(true));
 
 setupButtons('from-tabs', 'from');
 setupButtons('to-tabs', 'to');

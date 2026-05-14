@@ -183,5 +183,5 @@ input {
     padding: 15px 25px;
     border-radius: 8px;
     display: none;
-    z-index: 1000;
+    /* z-index: 1000; */
 }
