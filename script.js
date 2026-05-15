@@ -156,22 +156,39 @@ function updateBankInfo() {
 }
 
 function setupButtons(containerId, type) {
-    const buttons = document.querySelectorAll(`#${containerId} button`);
-    buttons.forEach(btn => {
-        btn.onclick = () => {
-            if (btn.innerText === (type === 'from' ? fromCurrency : toCurrency) && type !== 'bank') return;
+    let buttons = document.querySelectorAll(`#${containerId} button`);
+    Array.from(buttons).map(btn => {
+        btn.addEventListener('click', () => {
+            let currentCurrency;
+            if (type === 'from') {
+                currentCurrency = fromCurrency;
+            } else {
+                currentCurrency = toCurrency;
+            }
+            
+            if (btn.innerText === currentCurrency && (type === 'bank') === false) {
+                return;
+            }
+            Array.from(buttons).map(b => {
+                b.classList.remove('active');
+                return b;
+            });
 
-            buttons.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-
-            if (type === 'from') fromCurrency = btn.innerText;
-            if (type === 'to') toCurrency = btn.innerText;
-            if (type === 'bank') activeBank = btn.innerText;
+            if (type === 'from') {
+                fromCurrency = btn.innerText;
+            } else if (type === 'to') {
+                toCurrency = btn.innerText;
+            } else if (type === 'bank') {
+                activeBank = btn.innerText;
+            }
 
             getRates();
-        };
+        });
+        
+        return btn;
     });
-}
+} 
 
 fromInput.oninput = () => calculate('from');
 toInput.oninput = () => calculate('to');
